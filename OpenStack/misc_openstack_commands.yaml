@@ -1,0 +1,77 @@
+ssh ubuntu@172.16.0.2 -i ~/.local/share/juju/ssh/juju_id_rsa
+juju --watch 10s
+
+
+juju run --unit keystone/leader leader-get admin_passwd
+juju run-action --wait grafana/leader show-admin-password
+
+juju run-action grafana/leader get-admin-password --model cos --wait
+
+se9deungahHei4Se
+beehungahVo3veim
+117bd8160cdd1b95a91709c923baa6ac
+
+juju config nova-cloud-controller console-access-protocol=novnc
+
+
+juju run-action --wait grafana/0 get-admin-password
+ juju show-status-log elasticsearch/0
+watch --color juju status --color --relations
+
+
+juju deploy --channel 8.0/stable mysql-router ironic-api-mysql-router
+juju add-relation ironic-api-mysql-router:db-router mysql-innodb-cluster:db-router
+juju add-relation ironic-api-mysql-router:shared-db ironic-api:shared-db
+
+juju add-relation keystone:identity-service ironic-api:identity-service
+juju add-relation ironic-api:certificates vault:certificates
+
+
+juju run-action \
+    --wait vault/0 get-root-ca --format json \
+    | jq -r '."unit-vault-0".results.output' \
+    | base64 -w 0 \
+    | xargs -I {} juju config openstack-service-checks trusted_ssl_ca={}
+
+
+
+
+
+
+
+juju add-cloud --client -f configs.yaml maas-one
+juju add-credential --client -f configs.yaml maas-one
+juju add-model --config default-series=jammy openstack
+
+
+sudo snap install maas-test-db
+sudo snap install maas --channel=3.3/stable
+sudo maas init region+rack --maas-url http://150.16.0.3:5240/MAAS --database-uri maas-test-db:///
+sudo maas createadmin --username admin --password admin --email admin@example.com --ssh-import gh:zeshaq
+sudo maas apikey --username admin > ~ubuntu/admin-api-key
+
+
+
+juju run-action ceilometer/0 ceilometer-upgrade --wait
+juju add-relation vault:certificates gnocchi:certificates
+juju add-relation vault:certificates aodh:certificates
+
+
+
+ sudo snap install juju --channel 3.2/stable
+mkdir -p ~/.local/share
+
+
+juju debug-log --tail --replay
+
+
+// when deploying kubernetes 
+sysctl -w net.ipv4.conf.default.rp_filter=0 ;
+sysctl -w "net.ipv4.conf.all.rp_filter=1"
+cat /proc/sys/net/ipv4/conf/all/rp_filter
+
+
+juju run-action ceph-osd/0 list-disks --wait
+
+juju run-action --wait ceph-osd/0 zap-disk i-really-mean-it=true devices=/dev/sdb
+juju run-action ceph-osd/0 add-disk osd-devices=/dev/sdb --wait
