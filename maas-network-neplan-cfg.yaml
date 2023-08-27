@@ -1,0 +1,39 @@
+maas-admin 158   8d
+maas-internal 157  85
+maas-public 159   bb
+
+
+
+
+network:
+  version: 2
+  renderer: networkd
+
+  ethernets:
+    enp1s0:
+      dhcp4: false 
+      dhcp6: false
+      addresses: [158.0.0.2/22] 
+      routes:
+      - to: default
+        via: 158.0.0.1
+      nameservers:
+        addresses: [8.8.8.8]
+    enp7s0:
+      dhcp4: false 
+      dhcp6: false
+      addresses: [157.0.0.2/22] 
+      routes:
+      - to: default
+        via: 157.0.0.1
+      nameservers:
+        addresses: [8.8.8.8]
+    enp8s0:
+      dhcp4: false 
+      dhcp6: false
+      addresses: [159.0.0.2/22] 
+      routes:
+      - to: default
+        via: 159.0.0.1
+      nameservers:
+        addresses: [8.8.8.8]

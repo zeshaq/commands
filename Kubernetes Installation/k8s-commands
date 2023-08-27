@@ -1,0 +1,9 @@
+sudo snap install kubectl --classic
+kubectl config set-context --current --namespace=httpd-namespace-xfusion
+ kubectl get pods --namespace=kube-public 
+ kubectl get deployment
+kubectl get all
+
+ kubectl config set-context --current --namespace=kube-public
+
+ juju unexpose kubernetes-worker

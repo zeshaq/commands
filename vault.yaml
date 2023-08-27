@@ -1,0 +1,18 @@
+sudo snap install vault
+export VAULT_ADDR="http://158.0.0.19:8200"
+vault operator init -key-shares=5 -key-threshold=3
+
+
+
+vault operator unseal 
+
+export VAULT_TOKEN=s.8hUmDZNukEiLOUmO4aDMiWAS
+vault token create -ttl=10m
+
+juju run-action --wait vault/leader authorize-charm token=s.9610AYws5XwlpswUJbjmqjB6
+
+
+juju run-action --wait vault/leader generate-root-ca
+
+
+ 

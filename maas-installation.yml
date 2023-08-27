@@ -1,0 +1,37 @@
+sudo snap install maas-test-db
+sudo snap install maas --channel=3.3/stable
+sudo maas init region+rack --maas-url http://158.0.0.2:5240/MAAS --database-uri maas-test-db:///
+sudo maas createadmin --username admin --password admin --email admin@example.com --ssh-import gh:zeshaq
+
+
+clouds:
+  maas-one:
+    type: maas
+    auth-types: [oauth1]
+    endpoint: http://158.0.0.2:5240/MAAS
+
+credentials:
+  maas-one:
+    anyuser:
+      auth-type: oauth1
+      maas-oauth: 2eEZbBmb6ur8cAbgFL:fnfyVNxqVscNSEL5wU:TCyw9q4acTvxhm9pRsafaGXRwt2pn8pJ
+
+sudo snap install juju --classic --channel 2.9
+juju add-cloud --client -f configs.yaml maas-one
+juju add-credential --client -f configs.yaml maas-one
+juju bootstrap --bootstrap-series=jammy --constraints tags=juju maas-one maas-controller
+
+juju add-model openstack
+
+
+
+
+moved 1
+node  2
+pure 3
+usable 4
+picked 5
+fun 6
+
+hip 8
+tender 10
