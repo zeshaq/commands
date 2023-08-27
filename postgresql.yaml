@@ -1,0 +1,42 @@
+
+ juju run  postgresql/leader get-password
+eZlUnL0JFnU16mun
+
+#get password of another user
+
+
+ juju run  postgresql/leader get-password  username=maas 
+ 
+
+sudo maas init region+rack --database-uri "postgres://maas:maas@160.0.20.1/maas"
+sudo maas init region --database-uri "postgres://maas:maas@160.0.0.113/maas"
+
+sudo maas init region+rack --database-uri "postgres://maas:maas@160.0.0.113/maas"
+
+psql --host  160.0.0.149 --username=operator --password --list
+
+
+ psql --host=160.0.0.149 --username=operator --password postgres
+
+create user maas with encrypted password 'maas';
+
+ grant all privileges on database maas to maas;
+
+
+ vip=160.0.114.11
+psql -p 5432 --host 160.0.20.1 --username=maas --password --list
+psql -p 5432 --host 160.0.0.150 --username=maas --password --list
+
+ sudo maas init region --database-uri "postgres://maas:maas@160.0.114.11:6432/maas"
+
+
+sudo maas init region+rack --database-uri "postgres://maas:maas@160.0.0.133/maas"
+
+juju deploy -n 3 --config vip=160.0.0.223 pgbouncer
+juju run-action postgresql/leader set-password username=my-user password=my-password --wait
+
+
+ psql --host=160.0.20.1 --username=maas --password maas
+
+
+systemctl status haproxy.service

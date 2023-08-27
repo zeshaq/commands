@@ -1,0 +1,22 @@
+ sudo snap install juju --channel 3.2/stable
+mkdir -p ~/.local/share
+
+
+cd $HOME
+mkdir .kube
+cd .kube
+microk8s config > config
+
+juju bootstrap micro microk8s-controller
+
+
+microk8s enable dns 
+microk8s enable hostpath-storage
+
+sudo apt install jq
+IPADDR=$(ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc')
+microk8s enable metallb:160.16.11.1-160.16.11.99
+
+
+sudo microceph.ceph status                                                                                                                                                                                        
+ microceph disk list

@@ -1,0 +1,37 @@
+{
+  "prometheus/0": {
+    "url": "http://160.16.22.1:80/coslite-prometheus-0"
+  },
+  "loki/0": {
+    "url": "http://160.16.22.1:80/coslite-loki-0"
+  },
+  "catalogue": {
+    "url": "http://160.16.22.1:80/coslite-catalogue"
+  },
+  "alertmanager": {
+    "url": "http://160.16.22.1:80/coslite-alertmanager"
+  }
+}
+
+
+
+url: http://160.16.22.1:80/coslite-catalogue
+url: http://160.16.22.1/coslite-grafana
+url: http://160.16.22.1:80/coslite-prometheus-0
+url: http://160.16.22.1:80/coslite-alertmanager
+
+
+
+grafana password 6EFL7UGJqy5g
+
+
+juju add-relation cos-proxy:downstream-prometheus-scrape  prometheus:metrics-endpoint 
+memcached:cluster                       memcached:cluster            memcached-replication  peer         
+memcached:juju-info                     nrpe:general-info            juju-info              subordinate  
+memcached:local-monitors                nrpe:local-monitors          local-monitors         subordinate  
+juju add-relation memcached:monitors    cos-proxy:monitors           monitors               regular      
+memcached:nrpe-external-master          nrpe:nrpe-external-master    nrpe-external-master   subordinate  
+juju add-relation nrpe:monitors         cos-proxy:monitors           monitors               regular      
+nrpe:monitors                           nagios:monitors              monitors               regular      
+ubuntu:juju-info                        nrpe:general-info            juju-info              subordinate  
+ubuntu:juju-info                        telegraf:juju-info           juju-info      

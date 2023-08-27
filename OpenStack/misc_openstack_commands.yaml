@@ -75,3 +75,73 @@ juju run-action ceph-osd/0 list-disks --wait
 
 juju run-action --wait ceph-osd/0 zap-disk i-really-mean-it=true devices=/dev/sdb
 juju run-action ceph-osd/0 add-disk osd-devices=/dev/sdb --wait
+
+
+#openstack final commands
+sudo snap install openstackclients
+git clone https://github.com/openstack-charmers/openstack-bundles ~/openstack-bundles
+source ~/openstack-bundles/stable/openstack-base/openrc
+env | grep OS_
+openstack endpoint list --interface admin
+mkdir ~/cloud-images
+
+
+ashuk6bie3Jirida
+
+wget http://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img \
+   -O ~/cloud-images/jammy-amd64.img
+
+openstack image create --public --container-format bare \
+   --disk-format qcow2 --file ~/cloud-images/jammy-amd64.img \
+   jammy-amd64
+
+openstack flavor create --ram 2048 --disk 20 --ephemeral 20 m1.small
+
+openstack network create --external --share \
+   --provider-network-type flat --provider-physical-network physnet1 \
+   ext_net
+
+
+
+   openstack subnet create --network ext_net --no-dhcp \
+   --gateway 158.0.0.1 --subnet-range 158.0.0.0/22 \
+   --allocation-pool start=158.0.0.220,end=158.0.0.250 \
+   ext_subnet
+
+   openstack subnet create --network ext_net --no-dhcp \
+   --gateway 159.0.0.1 --subnet-range 159.0.0.0/22 \
+   --allocation-pool start=159.0.0.220,end=159.0.0.250 \
+   ext_subnet2
+
+   openstack network create --internal int_net
+
+openstack subnet create \
+   --allocation-pool start=192.168.0.10,end=192.168.0.99 \
+   --subnet-range 192.168.0.0/24 --dns-nameserver 8.8.8.8 --network int_net \
+   int_subnet
+
+
+   openstack router create router1
+openstack router add subnet router1 int_subnet
+
+openstack router set router1 --external-gateway ext_net
+
+
+   openstack network create --internal int_net2
+
+openstack subnet create \
+   --allocation-pool start=192.155.0.10,end=192.155.0.99 \
+   --subnet-range 192.155.0.0/24 --dns-nameserver 8.8.8.8 --network int_net2 \
+   int_subnet2
+
+   openstack router create router2
+openstack router add subnet router2 int_subnet2
+openstack router set router2 --external-gateway ext_net
+
+
+
+
+// second network
+
+
+ 
