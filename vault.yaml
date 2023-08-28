@@ -1,18 +1,24 @@
 sudo snap install vault
-export VAULT_ADDR="http://158.0.0.19:8200"
+export VAULT_ADDR="http://158.0.0.107:8200"
 vault operator init -key-shares=5 -key-threshold=3
 
 
 
 vault operator unseal 
 
-export VAULT_TOKEN=s.8hUmDZNukEiLOUmO4aDMiWAS
+export VAULT_TOKEN=s.2CBEy1AtGvcByfYlKr8e0vsg
 vault token create -ttl=10m
 
-juju run-action --wait vault/leader authorize-charm token=s.9610AYws5XwlpswUJbjmqjB6
+juju run-action --wait vault/leader authorize-charm token=s.id1zTMUnvivyiC7LmC3Yzj3I
 
 
 juju run-action --wait vault/leader generate-root-ca
 
+vault operator unseal  8KNLc2QHpHNq95N5Hx9xviBCv564y/sGLC0QOqykp60E
+vault operator unseal 1+qtiyPt4+Qg9wOFb/8GiIWv0Nadu+FNuLKyChjB2zXI
+vault operator unseal k8S2UOJvCH3NKt2h3XhkLaObn1ypqKeg56xfcjOBPo1I
+Unseal Key 4: 5hQazYfMC3WjDbI+Kl8iA0dAWiY4EYxbIPRGKIEijO9G
+Unseal Key 5: OtCmu/URXMmqWF7JYioUpdAWlVyY80s1Ip/tkl6jxOMW
 
- 
+Initial Root Token: s.2CBEy1AtGvcByfYlKr8e0vsg
+

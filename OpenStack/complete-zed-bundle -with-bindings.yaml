@@ -42,22 +42,8 @@ machines:
     constraints: tags=ceph
   '3':
     series: jammy
-    constraints: tags=compute
-  '4':
-    series: jammy
-    constraints: tags=compute
-  '5':
-    series: jammy
-    constraints: tags=compute
-  '6':
-    series: jammy
-    constraints: tags=compute
-  '7':
-    series: jammy
-    constraints: tags=compute
-  '8':
-    series: jammy
-    constraints: tags=compute
+    constraints: tags=ceph
+
 relations:
 - - nova-compute:amqp
   - rabbitmq-server:amqp
@@ -288,12 +274,12 @@ applications:
     charm: ch:ceilometer
     num_units: 3
     options:
-      vip: 11.0.210.60
+      vip: 158.0.2.221
       openstack-origin: *openstack-origin
     to:
-    - lxd:6
-    - lxd:7
-    - lxd:8
+    - lxd:0
+    - lxd:1
+    - lxd:2
     channel: *openstack-charm-channel
   ceilometer-agent:
     annotations:
@@ -346,12 +332,12 @@ applications:
     num_units: 3
     
     options:
-      vip: 11.0.210.10
+      vip: 158.0.2.222
       source: *openstack-origin
     to:
+    - lxd:1
+    - lxd:2
     - lxd:3
-    - lxd:4
-    - lxd:5
     channel: *ceph-charm-channel
   cinder-mysql-router:
     annotations:
@@ -374,7 +360,7 @@ applications:
     - lxd:1
     - lxd:2
     options:
-      vip: 11.0.210.12
+      vip: 158.0.2.223
       block-device: None
       glance-api-version: 2
       worker-multiplier: *worker-multiplier
@@ -394,7 +380,7 @@ applications:
     charm: ch:cos-proxy
     num_units: 1
     to: 
-    - lxd:5
+    - lxd:3
     channel: latest/stable
   easyrsa:
     annotations:
@@ -404,8 +390,8 @@ applications:
     num_units: 3
     to:
     - lxd:3
-    - lxd:4
-    - lxd:5
+    - lxd:2
+    - lxd:1
     channel: latest/stable
   etcd:
     annotations:
@@ -414,9 +400,9 @@ applications:
     charm: ch:etcd
     num_units: 3
     to:
-    - lxd:6
-    - lxd:7
-    - lxd:8
+    - lxd:3
+    - lxd:2
+    - lxd:1
     channel: latest/stable
   glance-mysql-router:
     annotations:
@@ -435,13 +421,13 @@ applications:
     num_units: 3
     
     options:
-      vip: 11.0.210.20
+      vip: 158.0.2.224
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
     to:
     - lxd:3
-    - lxd:4
-    - lxd:5
+    - lxd:2
+    - lxd:1
     channel: *openstack-charm-channel
   keystone-mysql-router:
     annotations:
@@ -460,13 +446,13 @@ applications:
     num_units: 3
     
     options:
-      vip: 11.0.210.25
+      vip: 158.0.2.225
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
     to:
-    - lxd:6
-    - lxd:7
-    - lxd:8
+    - lxd:3
+    - lxd:2
+    - lxd:1
     channel: *openstack-charm-channel
   neutron-mysql-router:
     annotations:
@@ -491,13 +477,13 @@ applications:
     num_units: 3
     
     options:
-      vip: 11.0.210.30
+      vip: 158.0.2.226
       neutron-security-groups: true
       flat-network-providers: physnet1
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
     to:
-    - lxd:4
+    - lxd:3
     - lxd:1
     - lxd:2
     channel: *openstack-charm-channel
@@ -518,11 +504,11 @@ applications:
     num_units: 3
     
     options:
-      vip: 11.0.210.35
+      vip: 158.0.2.227
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
     to:
-    - lxd:4
+    - lxd:0
     - lxd:1
     - lxd:2
     channel: *openstack-charm-channel
@@ -535,8 +521,8 @@ applications:
     num_units: 3
     to:
     - 3
-    - 4
-    - 5
+    - 2
+    - 1
   nova-mysql-router:
     annotations:
       gui-x: '-30'
@@ -555,7 +541,7 @@ applications:
     num_units: 3
    
     options:
-      vip: 11.0.210.40
+      vip: 158.0.2.228
       network-manager: Neutron
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
@@ -605,7 +591,7 @@ applications:
     num_units: 3
    
     options:
-      vip: 11.0.210.45
+      vip: 158.0.2.229
       enforce-ssl: true
       cinder-backup: true    
       openstack-origin: *openstack-origin
@@ -677,7 +663,7 @@ applications:
     channel: 1.8/stable
     num_units: 3
     options:
-      vip: 11.0.210.50
+      vip: 158.0.2.230
     to:
     - lxd:0
     - lxd:1
@@ -692,10 +678,12 @@ applications:
     num_units: 3
     charm: ch:gnocchi
     options:
-      vip: 11.0.210.70
+      vip: 158.0.2.231
       openstack-origin: *openstack-origin
     to:
     - lxd:3
+    - lxd:2
+    - lxd:1
     channel: *openstack-charm-channel
   gnocchi-mysql-router:
     charm: ch:mysql-router
