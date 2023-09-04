@@ -1,0 +1,62 @@
+mkdir -p ~/.local/share
+sudo snap install juju --classic
+sudo snap install openstackclients --classic
+sudo apt install zfsutils-linux
+sudo snap install lxd
+sudo apt purge liblxc1 lxcfs lxd lxd-client
+git clone https://github.com/openstack-charmers/openstack-on-lxd.git ~/openstack-on-lxd
+
+echo fs.inotify.max_queued_events=1048576 | sudo tee -a /etc/sysctl.conf
+echo fs.inotify.max_user_instances=1048576 | sudo tee -a /etc/sysctl.conf
+echo fs.inotify.max_user_watches=1048576 | sudo tee -a /etc/sysctl.conf
+echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf
+echo vm.swappiness=1 | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+
+
+
+sudo zpool create lxd-zfs sdb sdc sdd
+lxc storage create lxd-zfs zfs source=lxd-zfs
+
+
+
+
+
+juju deploy -n 3 --channel quincy/stable --config configs.yaml   ceph-osd
+
+juju deploy -n 3 --channel 2023.1/stable --config configs.yaml nova-compute
+juju deploy -n 3  --channel quincy/stable --config configs.yaml ceph-mon
+juju deploy -n 3  --channel 8.0/stable mysql-innodb-cluster
+juju deploy --channel 1.8/stable vault
+
+
+
+juju add-relation ceph-mon:osd ceph-osd:mon
+
+
+
+
+
+
+
+
+
+
+  bridges:
+    br0:
+      interfaces: [enp1s0]
+      addresses: [10.15.3.120/22]
+      # gateway4 is deprecated, use routes instead
+      routes:
+      - to: default
+        via: 10.15.0.1
+        metric: 100
+        on-link: true
+      mtu: 1500
+      nameservers:
+        addresses: [8.8.8.8]
+      parameters:
+        stp: true
+        forward-delay: 4
+      dhcp4: no
+      dhcp6: no

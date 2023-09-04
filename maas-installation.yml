@@ -1,6 +1,6 @@
 sudo snap install maas-test-db
 sudo snap install maas --channel=3.3/stable
-sudo maas init region+rack --maas-url http://158.0.0.2:5240/MAAS --database-uri maas-test-db:///
+sudo maas init region+rack --maas-url http://10.13.0.5:5240/MAAS --database-uri maas-test-db:///
 sudo maas createadmin --username admin --password admin --email admin@example.com --ssh-import gh:zeshaq
 
 
@@ -8,13 +8,13 @@ clouds:
   maas-one:
     type: maas
     auth-types: [oauth1]
-    endpoint: http://158.0.0.2:5240/MAAS
+    endpoint: http://10.13.0.5:5240/MAAS 
 
 credentials:
   maas-one:
     anyuser:
       auth-type: oauth1
-      maas-oauth: 2eEZbBmb6ur8cAbgFL:fnfyVNxqVscNSEL5wU:TCyw9q4acTvxhm9pRsafaGXRwt2pn8pJ
+      maas-oauth: qDJ4Dkp9nvbrBTPbLn:nX5qVpUmayxeLbr5P9:CCpZ3uP845BXzPKc8n94nq2PsnNExQwD
 
 sudo snap install juju --classic --channel 2.9
 juju add-cloud --client -f configs.yaml maas-one
@@ -23,15 +23,48 @@ juju bootstrap --bootstrap-series=jammy --constraints tags=juju maas-one maas-co
 
 juju add-model openstack
 
+juju add-model --config default-space=public_space openstack
+
+
+network:
+  version: 2
+  ethernets:
+    enp1s0:
+      dhcp4: false
+      addresses: [10.13.0.5/22]
+      routes:
+      - to : default
+        via: 10.13.0.1
+      nameservers:
+        addresses: [8.8.8.8]
+    enp7s0:
+      dhcp4: false
+      addresses: [10.14.0.5/22]
+      routes: 
+      - to : default
+        via: 10.14.0.1
+      nameservers:
+        addresses: [8.8.8.8]
+    enp8s0:
+      dhcp4: false
+      addresses: [10.15.0.5/22]
+      routes: 
+      - to : default
+        via: 10.15.0.1
+      nameservers:
+        addresses: [8.8.8.8]
+    enp9s0:
+      dhcp4: false
+      addresses: [103.108.62.220/29]
+      routes: 
+      - to : default
+        via: 103.108.62.217
+      nameservers:
+        addresses: [8.8.8.8]
 
 
 
-moved 1
-node  2
-pure 3
-usable 4
-picked 5
-fun 6
 
-hip 8
-tender 10
+
+     
+ 

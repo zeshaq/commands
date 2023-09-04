@@ -1,30 +1,20 @@
-#customize failure domain is enabled for ceph nova-compute and neutron
-#ceilometer is configured 
-#postgresql needed for ceph encryption at rest 
-#etcd added for vault ha
-#The recommended topology is to have one ovn-chassis unit placed on each hypervisor.
-#encryption at rest -- need to configure
-#masakari-not done yet
-#octavia -- not done yet
-#postgresql can't be added to lxd. 
-# openstack dashboard enforce ssl 
-# ceph bluestore compression
-#magnum
-#os harden
-
-#add gnocchi hacluster
-#add ceilometer hacluster
-
-
-name: openstack-comptech-bundle
+# Please refer to the OpenStack Charms Deployment Guide for more information.
+# https://docs.openstack.org/project-deploy-guide/charm-deployment-guide
+#
+# NOTE: Please review the value for the configuration option
+#       `bridge-interface-mappings` for the `ovn-chassis` charm (see `data-port` variable).
+#       Refer to the [Open Virtual Network (OVN)](https://docs.openstack.org/project-deploy-guide/charm-deployment-guide/latest/app-ovn.html)
+#       section of the [OpenStack Charms Deployment Guide](https://docs.openstack.org/project-deploy-guide/charm-deployment-guide/latest/)
+#       for more information.
+name: openstack-telemetry
 local_overlay_enabled: true
 series: jammy
 variables:
   openstack-origin: &openstack-origin cloud:jammy-zed
-  openstack-charm-channel: &openstack-charm-channel zed/stable
-  ovn-charm-channel: &ovn-charm-channel 22.09/stable
-  ceph-charm-channel: &ceph-charm-channel quincy/stable
-  mysql-charm-channel: &mysql-charm-channel 8.0/stable
+  openstack-charm-channel: &openstack-charm-channel zed/edge
+  ovn-charm-channel: &ovn-charm-channel 22.09/edge
+  ceph-charm-channel: &ceph-charm-channel quincy/edge
+  mysql-charm-channel: &mysql-charm-channel 8.0/edge
   data-port: &data-port br-ex:enp7s0
   worker-multiplier: &worker-multiplier 0.25
   osd-devices: &osd-devices /dev/sdb /dev/sdc /dev/sdd
@@ -40,10 +30,6 @@ machines:
   '2':
     series: jammy
     constraints: tags=ceph
-  '3':
-    series: jammy
-    constraints: tags=ceph
-
 relations:
 - - nova-compute:amqp
   - rabbitmq-server:amqp
@@ -89,11 +75,6 @@ relations:
   - glance:ceph
 - - ceph-osd:mon
   - ceph-mon:osd
-
-- - vault:secrets 
-  - ceph-osd:secrets-storage
-- - vault:db 
-  - postgresql:db
 - - ntp:juju-info
   - nova-compute:juju-info
 - - ceph-radosgw:mon
@@ -104,12 +85,10 @@ relations:
   - keystone
 - - placement
   - nova-cloud-controller
-
+- - keystone:shared-db
+  - keystone-mysql-router:shared-db
 - - cinder:shared-db
   - cinder-mysql-router:shared-db
- 
-
-
 - - glance:shared-db
   - glance-mysql-router:shared-db
 - - nova-cloud-controller:shared-db
@@ -124,8 +103,6 @@ relations:
   - vault-mysql-router:shared-db
 - - keystone-mysql-router:db-router
   - mysql-innodb-cluster:db-router
-- - keystone:shared-db
-  - keystone-mysql-router:shared-db
 - - cinder-mysql-router:db-router
   - mysql-innodb-cluster:db-router
 - - nova-mysql-router:db-router
@@ -178,6 +155,8 @@ relations:
   - keystone:identity-notifications
 - - ceilometer:identity-credentials
   - keystone:identity-credentials
+- - ceilometer:identity-service
+  - keystone:identity-service
 - - vault:certificates
   - ceilometer:certificates
 - - ceilometer-agent:nova-ceilometer
@@ -194,10 +173,6 @@ relations:
   - keystone:identity-service
 - - aodh:amqp
   - rabbitmq-server:amqp
-- - vault:certificates
-  - aodh:certificates
-- - gnocchi-hacluster:ha
-  - gnocchi:ha
 - - gnocchi:storage-ceph
   - ceph-mon:client
 - - gnocchi-mysql-router:db-router
@@ -212,37 +187,6 @@ relations:
   - ceilometer:metric-service
 - - gnocchi:identity-service
   - keystone:identity-service
-- - vault:certificates
-  - gnocchi:certificates
-- - etcd:db 
-  - vault:etcd
-- - etcd:certificates 
-  - easyrsa:client
-- - ceph-radosgw-hacluster:ha
-  - ceph-radosgw:ha
-- - nova-cloud-controller-hacluster:ha
-  - nova-cloud-controller:ha
-- - nova-cloud-controller:memcache
-  - memcached:cache
-- - cinder-hacluster:ha
-  - cinder:ha
-- - glance-hacluster:ha
-  - glance:ha
-- - placement-hacluster:ha
-  - placement:ha
-- - vault-hacluster:ha
-  - vault:ha
-- - keystone-hacluster:ha
-  - keystone:ha
-- - neutron-api-hacluster:ha
-  - neutron-api:ha
-- - openstack-dashboard-hacluster:ha
-  - openstack-dashboard:ha
-- - ceilometer-hacluster:ha
-  - ceilometer:ha
-- - ceilometer-mysql-router:db-router
-  - mysql-innodb-cluster:db-router
-
 applications:
   aodh:
     annotations:
@@ -258,27 +202,15 @@ applications:
   aodh-mysql-router:
     charm: ch:mysql-router
     channel: *mysql-charm-channel
-  ceilometer-mysql-router:
-    annotations:
-      gui-x: '900'
-      gui-y: '1400'
-    charm: ch:mysql-router
-    channel: *mysql-charm-channel
-  ceilometer-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   ceilometer:
     annotations:
       gui-x: '1250'
       gui-y: '0'
     charm: ch:ceilometer
-    num_units: 3
+    num_units: 1
     options:
-      vip: 158.0.2.221
       openstack-origin: *openstack-origin
     to:
-    - lxd:0
-    - lxd:1
     - lxd:2
     channel: *openstack-charm-channel
   ceilometer-agent:
@@ -286,6 +218,7 @@ applications:
       gui-x: '1250'
       gui-y: '500'
     charm: ch:ceilometer-agent
+    num_units: 0
     channel: *openstack-charm-channel
   ceph-mon:
     annotations:
@@ -294,7 +227,6 @@ applications:
     charm: ch:ceph-mon
     num_units: 3
     options:
-      customize-failure-domain: true
       expected-osd-count: *expected-osd-count
       monitor-count: *expected-mon-count
       source: *openstack-origin
@@ -310,10 +242,6 @@ applications:
     charm: ch:ceph-osd
     num_units: 3
     options:
-      bluestore: true
-      customize-failure-domain: true
-      osd-encrypt: true
-      osd-encrypt-keymanager: vault
       osd-devices: *osd-devices
       source: *openstack-origin
     to:
@@ -321,23 +249,16 @@ applications:
     - '1'
     - '2'
     channel: *ceph-charm-channel
-  ceph-radosgw-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   ceph-radosgw:
     annotations:
       gui-x: '850'
       gui-y: '900'
     charm: ch:ceph-radosgw
-    num_units: 3
-    
+    num_units: 1
     options:
-      vip: 158.0.2.222
       source: *openstack-origin
     to:
-    - lxd:1
-    - lxd:2
-    - lxd:3
+    - lxd:0
     channel: *ceph-charm-channel
   cinder-mysql-router:
     annotations:
@@ -345,89 +266,44 @@ applications:
       gui-y: '1400'
     charm: ch:mysql-router
     channel: *mysql-charm-channel
-  cinder-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   cinder:
     annotations:
       gui-x: '980'
       gui-y: '1270'
     charm: ch:cinder
-    num_units: 3
-    
-    to:
-    - lxd:0
-    - lxd:1
-    - lxd:2
+    num_units: 1
     options:
-      vip: 158.0.2.223
       block-device: None
       glance-api-version: 2
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
+    to:
+    - lxd:1
     channel: *openstack-charm-channel
- 
   cinder-ceph:
     annotations:
       gui-x: '1120'
       gui-y: '1400'
     charm: ch:cinder-ceph
+    num_units: 0
     channel: *openstack-charm-channel
-  cos-proxy:
-    annotations:
-      gui-x: '1120'
-      gui-y: '1400'
-    charm: ch:cos-proxy
-    num_units: 1
-    to: 
-    - lxd:3
-    channel: latest/stable
-  easyrsa:
-    annotations:
-      gui-x: '-230'
-      gui-y: '1270'
-    charm: ch:easyrsa
-    num_units: 3
-    to:
-    - lxd:3
-    - lxd:2
-    - lxd:1
-    channel: latest/stable
-  etcd:
-    annotations:
-      gui-x: '-230'
-      gui-y: '1270'
-    charm: ch:etcd
-    num_units: 3
-    to:
-    - lxd:3
-    - lxd:2
-    - lxd:1
-    channel: latest/stable
   glance-mysql-router:
     annotations:
       gui-x: '-290'
       gui-y: '1400'
     charm: ch:mysql-router
     channel: *mysql-charm-channel
-  glance-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   glance:
     annotations:
       gui-x: '-230'
       gui-y: '1270'
     charm: ch:glance
-    num_units: 3
-    
+    num_units: 1
     options:
-      vip: 158.0.2.224
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
     to:
-    - lxd:3
     - lxd:2
-    - lxd:1
     channel: *openstack-charm-channel
   keystone-mysql-router:
     annotations:
@@ -435,24 +311,17 @@ applications:
       gui-y: '1400'
     charm: ch:mysql-router
     channel: *mysql-charm-channel
-  keystone-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   keystone:
     annotations:
       gui-x: '300'
       gui-y: '1270'
     charm: ch:keystone
-    num_units: 3
-    
+    num_units: 1
     options:
-      vip: 158.0.2.225
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
     to:
-    - lxd:3
-    - lxd:2
-    - lxd:1
+    - lxd:0
     channel: *openstack-charm-channel
   neutron-mysql-router:
     annotations:
@@ -466,26 +335,19 @@ applications:
       gui-y: '1385'
     charm: ch:neutron-api-plugin-ovn
     channel: *openstack-charm-channel
-  neutron-api-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   neutron-api:
     annotations:
       gui-x: '580'
       gui-y: '1270'
     charm: ch:neutron-api
-    num_units: 3
-    
+    num_units: 1
     options:
-      vip: 158.0.2.226
       neutron-security-groups: true
-      flat-network-providers: physnet1
+      flat-network-providers: physnet1 physnet2
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
     to:
-    - lxd:3
     - lxd:1
-    - lxd:2
     channel: *openstack-charm-channel
   placement-mysql-router:
     annotations:
@@ -493,62 +355,36 @@ applications:
       gui-y: '1385'
     charm: ch:mysql-router
     channel: *mysql-charm-channel
-  placement-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   placement:
     annotations:
       gui-x: '1320'
       gui-y: '1270'
     charm: ch:placement
-    num_units: 3
-    
+    num_units: 1
     options:
-      vip: 158.0.2.227
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
     to:
-    - lxd:0
-    - lxd:1
     - lxd:2
     channel: *openstack-charm-channel
-  postgresql:
-    annotations:
-      gui-x: '1320'
-      gui-y: '1270'
-    charm: ch:postgresql
-    channel: 14/stable
-    num_units: 3
-    to:
-    - 3
-    - 2
-    - 1
   nova-mysql-router:
     annotations:
       gui-x: '-30'
       gui-y: '1385'
     charm: ch:mysql-router
     channel: *mysql-charm-channel
-
-  nova-cloud-controller-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   nova-cloud-controller:
     annotations:
       gui-x: '35'
       gui-y: '1270'
     charm: ch:nova-cloud-controller
-    num_units: 3
-   
+    num_units: 1
     options:
-      vip: 158.0.2.228
       network-manager: Neutron
       worker-multiplier: *worker-multiplier
       openstack-origin: *openstack-origin
     to:
     - lxd:0
-    - lxd:1
-    - lxd:2
     channel: *openstack-charm-channel
   nova-compute:
     annotations:
@@ -557,10 +393,10 @@ applications:
     charm: ch:nova-compute
     num_units: 3
     options:
-      customize-failure-domain: true
       config-flags: default_ephemeral_format=ext4
       enable-live-migration: true
       enable-resize: true
+      
       migration-auth-type: ssh
       openstack-origin: *openstack-origin
     to:
@@ -573,33 +409,25 @@ applications:
       gui-x: '315'
       gui-y: '1030'
     charm: ch:ntp
-
+    num_units: 0
   dashboard-mysql-router:
     annotations:
       gui-x: '510'
       gui-y: '1030'
     charm: ch:mysql-router
     channel: *mysql-charm-channel
-  openstack-dashboard-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   openstack-dashboard:
     annotations:
       gui-x: '585'
       gui-y: '900'
     charm: ch:openstack-dashboard
-    num_units: 3
-   
+    num_units: 1
     options:
-      vip: 158.0.2.229
       enforce-ssl: true
-      cinder-backup: true    
+      cinder-backup: true
       openstack-origin: *openstack-origin
     to:
-    - lxd:0
-    - lxd:3
-    - lxd:2
-    
+    - lxd:1
     channel: *openstack-charm-channel
   rabbitmq-server:
     annotations:
@@ -609,7 +437,7 @@ applications:
     num_units: 1
     to:
     - lxd:2
-    channel: 3.9/stable
+    channel: 3.9/edge
   mysql-innodb-cluster:
     annotations:
       gui-x: '535'
@@ -619,7 +447,7 @@ applications:
     to:
     - lxd:0
     - lxd:1
-    - lxd:3
+    - lxd:2
     channel: *mysql-charm-channel
   ovn-central:
     annotations:
@@ -652,37 +480,24 @@ applications:
       gui-y: '1560'
     charm: ch:mysql-router
     channel: *mysql-charm-channel
-  vault-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   vault:
     annotations:
       gui-x: '1610'
       gui-y: '1430'
     charm: ch:vault
     channel: 1.8/stable
-    num_units: 3
-    options:
-      vip: 158.0.2.230
+    num_units: 1
     to:
     - lxd:0
-    - lxd:1
-    - lxd:3
-  gnocchi-hacluster:
-    charm: 'ch:hacluster'
-    channel: 2.4/stable 
   gnocchi:
     annotations:
       gui-x: '1500'
       gui-y: '250'
-    num_units: 3
+    num_units: 1
     charm: ch:gnocchi
     options:
-      vip: 158.0.2.231
       openstack-origin: *openstack-origin
     to:
-    - lxd:3
-    - lxd:2
     - lxd:1
     channel: *openstack-charm-channel
   gnocchi-mysql-router:

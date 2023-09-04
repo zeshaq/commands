@@ -1,0 +1,112 @@
+juju deploy cos-proxy --channel latest/stable --to lxd:2
+juju deploy prometheus-openstack-exporter  --channel latest/stable --to lxd:2
+
+juju deploy prometheus-grok-exporter  --channel latest/stable   //subordinate
+juju deploy prometheus-blackbox-exporter  --channel latest/stable --to lxd:2 
+
+juju deploy nrpe --channel latest/stable 
+juju deploy telegraf --channel latest/stable 
+juju deploy grafana-agent  --channel edge
+
+juju deploy openstack-service-checks --channel latest/stable --to lxd:1
+
+
+ juju add-relation telegraf:prometheus-client cos-proxy:prometheus-target
+
+
+juju relate prometheus-openstack-exporter keystone
+juju add-relation telegraf rabbitmq-server
+ juju add-relation prometheus-openstack-exporter telegraf
+
+
+
+
+##microk8s installation
+
+sudo snap install microk8s --classic --channel=1.28
+sudo usermod -a -G microk8s $USER
+sudo chown -f -R $USER ~/.kube
+su - $USER
+microk8s enable dns
+microk8s enable hostpath-storage
+sudo apt install jq
+sudo snap install yq
+
+mkdir .kube
+cd .kube
+microk8s config > config
+
+juju add-k8s micro maas-controller
+juju add-model cos micro
+juju switch cos
+
+IPADDR=$(ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc')
+microk8s enable metallb:10.13.2.210-10.13.2.254
+
+
+
+curl -L https://raw.githubusercontent.com/canonical/cos-lite-bundle/main/overlays/offers-overlay.yaml -O
+curl -L https://raw.githubusercontent.com/canonical/cos-lite-bundle/main/overlays/storage-small-overlay.yaml -O
+
+
+juju deploy cos-lite \
+  --trust \
+  --overlay ./offers-overlay.yaml \
+  --overlay ./storage-small-overlay.yaml
+
+
+juju run-action --wait traefik/0 show-proxied-endpoints | yq '."unit-traefik-0".results."proxied-endpoints"' | jq --wait
+juju show-unit catalogue/0 | grep url
+
+juju run-action grafana/leader get-admin-password --model cos --wait
+6dtRplEno5eC
+
+
+#### configure 
+
+juju offer cos.prometheus:metrics-endpoint
+juju offer cos.grafana:grafana-dashboard
+
+juju consume cos.prometheus
+juju consume cos.grafana
+
+juju add-relation cos-proxy:downstream-prometheus-scrape  prometheus:metrics-endpoint 
+juju add-relation nrpe:monitors                           cos-proxy:monitors     
+
+
+juju add-relation memcached:juju-info                     nrpe:general-info           
+juju add-relation memcached:local-monitors                nrpe:local-monitors         
+juju add-relation memcached:monitors                      cos-proxy:monitors               
+juju add-relation memcached:nrpe-external-master          nrpe:nrpe-external-master    
+      
+juju add-relation nrpe:monitors                           nagios:monitors                   
+juju add-relation nova-compute:juju-info                        nrpe:general-info                         
+juju add-relation nova-compute:juju-info                        telegraf:juju-info            
+juju add-relation cos-proxy:downstream-grafana-dashboard grafana-dashboards:grafana-dashboard 
+juju add-relation prometheus-openstack-exporter:dashboards cos-proxy:dashboards
+juju relate grafana-agent prometheus-receive-remote-write
+juju relate grafana-agent loki-logging
+juju relate grafana-agent grafana-dashboards
+
+juju relate grafana-agent grafana
+juju add-relation grafana-agent prometheus-openstack-exporter
+
+
+juju relate telegraf:dashboards cos-proxy:dashboards
+juju relate grafana cos-proxy:downstream-grafana-dashboard
+
+
+ juju add-relation prometheus-openstack-exporter cos-proxy:prometheus-rules
+
+
+juju consume cos.loki-logging
+
+
+
+
+
+
+        url: http://10.13.2.210:80/cos-catalogue
+      url: http://10.13.2.210/cos-grafana
+      url: http://10.13.2.210:80/cos-prometheus-0
+      url: http://10.13.2.210:80/cos-alertmanager

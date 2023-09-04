@@ -1,24 +1,28 @@
 sudo snap install vault
-export VAULT_ADDR="http://158.0.0.107:8200"
+export VAULT_ADDR="http://10.13.0.233:8200"
 vault operator init -key-shares=5 -key-threshold=3
 
 
 
 vault operator unseal 
 
-export VAULT_TOKEN=s.2CBEy1AtGvcByfYlKr8e0vsg
+export VAULT_TOKEN=s.EzCX8hTEW7sfadWQwtrj5wo8
 vault token create -ttl=10m
 
-juju run-action --wait vault/leader authorize-charm token=s.id1zTMUnvivyiC7LmC3Yzj3I
+juju run-action --wait vault/leader authorize-charm token=s.Sg7pLVj8Z0IL8HEoAIxUbXgC
 
 
 juju run-action --wait vault/leader generate-root-ca
 
-vault operator unseal  8KNLc2QHpHNq95N5Hx9xviBCv564y/sGLC0QOqykp60E
-vault operator unseal 1+qtiyPt4+Qg9wOFb/8GiIWv0Nadu+FNuLKyChjB2zXI
-vault operator unseal k8S2UOJvCH3NKt2h3XhkLaObn1ypqKeg56xfcjOBPo1I
-Unseal Key 4: 5hQazYfMC3WjDbI+Kl8iA0dAWiY4EYxbIPRGKIEijO9G
-Unseal Key 5: OtCmu/URXMmqWF7JYioUpdAWlVyY80s1Ip/tkl6jxOMW
+ze@maas:~$ export VAULT_ADDR="http://10.13.0.10:8200"
 
-Initial Root Token: s.2CBEy1AtGvcByfYlKr8e0vsg
+
+
+vault operator unseal Y1OppfpQdjBIWeW57YL6bMdxM7aozfjwGb0i/TaT5fT5
+vault operator unseal czpELUVPaV5c7rj+j861ZT2qtjH3FSd9BJ4YzbH6rR5e
+vault operator unseal NMsI3fo5fiKggAb/Ws3BgDAFm+KqfSvAOYkmbDLKxs0F
+Unseal Key 4: Sx9hkUekcAHIdjHZudBIbucIZ+v6TLAD6vT8oBDbrvQZ
+Unseal Key 5: AJaqCTDp0IcCkyHinf+GP2s9gdR0ZegYKLanTXED8JGL
+
+Initial Root Token: s.EzCX8hTEW7sfadWQwtrj5wo8
 

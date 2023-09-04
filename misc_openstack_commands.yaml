@@ -1,6 +1,9 @@
 ssh ubuntu@172.16.0.2 -i ~/.local/share/juju/ssh/juju_id_rsa
 juju --watch 10s
 
+juju run-action --wait vault/leader reissue-certificates
+
+
 
 juju run --unit keystone/leader leader-get admin_passwd
 juju run-action --wait grafana/leader show-admin-password
@@ -19,9 +22,9 @@ juju run-action --wait grafana/0 get-admin-password
 watch --color juju status --color --relations
 
 
-juju deploy --channel 8.0/stable mysql-router ironic-api-mysql-router
-juju add-relation ironic-api-mysql-router:db-router mysql-innodb-cluster:db-router
-juju add-relation ironic-api-mysql-router:shared-db ironic-api:shared-db
+juju deploy --channel 8.0/stable mysql-router magnum-mysql-router
+juju add-relation magnum-mysql-router:db-router mysql-innodb-cluster:db-router
+juju add-relation magnum-mysql-router:shared-db magnum:shared-db
 
 juju add-relation keystone:identity-service ironic-api:identity-service
 juju add-relation ironic-api:certificates vault:certificates
@@ -58,6 +61,13 @@ juju add-relation vault:certificates aodh:certificates
 
 
 
+
+ juju deploy --channel 8.0/stable mysql-router vault-mysql-router
+juju add-relation barbican-mysql-router:db-router mysql-innodb-cluster:db-router
+juju add-relation barbican-mysql-router:shared-db vault:shared-db
+
+
+
  sudo snap install juju --channel 3.2/stable
 mkdir -p ~/.local/share
 
@@ -71,25 +81,31 @@ sysctl -w "net.ipv4.conf.all.rp_filter=1"
 cat /proc/sys/net/ipv4/conf/all/rp_filter
 
 
-juju run-action ceph-osd/0 list-disks --wait
+juju run-action ceph-osd/2 list-disks --wait
 
-juju run-action --wait ceph-osd/0 zap-disk i-really-mean-it=true devices=/dev/sdb
-juju run-action ceph-osd/0 add-disk osd-devices=/dev/sdb --wait
+juju run-action --wait ceph-osd/2 zap-disk i-really-mean-it=true devices=/dev/sdb
+juju run-action ceph-osd/2 add-disk osd-devices=/dev/sdd --wait
 
 
 #openstack final commands
+
+juju config nova-cloud-controller console-access-protocol=novnc
+
 sudo snap install openstackclients
 git clone https://github.com/openstack-charmers/openstack-bundles ~/openstack-bundles
 source ~/openstack-bundles/stable/openstack-base/openrc
 env | grep OS_
 openstack endpoint list --interface admin
+
+OS_PASSWORD=xair3ahgohyis8Mi
+OS_PASSWORD=xair3ahgohyis8Mi
+
+
 mkdir ~/cloud-images
-
-
-ashuk6bie3Jirida
-
 wget http://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img \
    -O ~/cloud-images/jammy-amd64.img
+
+
 
 openstack image create --public --container-format bare \
    --disk-format qcow2 --file ~/cloud-images/jammy-amd64.img \
@@ -97,51 +113,39 @@ openstack image create --public --container-format bare \
 
 openstack flavor create --ram 2048 --disk 20 --ephemeral 20 m1.small
 
-openstack network create --external --share \
-   --provider-network-type flat --provider-physical-network physnet1 \
-   ext_net
-
-
-
-   openstack subnet create --network ext_net --no-dhcp \
-   --gateway 158.0.0.1 --subnet-range 158.0.0.0/22 \
-   --allocation-pool start=158.0.0.220,end=158.0.0.250 \
-   ext_subnet
-
-   openstack subnet create --network ext_net --no-dhcp \
-   --gateway 159.0.0.1 --subnet-range 159.0.0.0/22 \
-   --allocation-pool start=159.0.0.220,end=159.0.0.250 \
-   ext_subnet2
-
-   openstack network create --internal int_net
-
-openstack subnet create \
-   --allocation-pool start=192.168.0.10,end=192.168.0.99 \
-   --subnet-range 192.168.0.0/24 --dns-nameserver 8.8.8.8 --network int_net \
-   int_subnet
-
-
-   openstack router create router1
-openstack router add subnet router1 int_subnet
-
-openstack router set router1 --external-gateway ext_net
-
-
-   openstack network create --internal int_net2
-
-openstack subnet create \
-   --allocation-pool start=192.155.0.10,end=192.155.0.99 \
-   --subnet-range 192.155.0.0/24 --dns-nameserver 8.8.8.8 --network int_net2 \
-   int_subnet2
-
-   openstack router create router2
-openstack router add subnet router2 int_subnet2
-openstack router set router2 --external-gateway ext_net
 
 
 
 
-// second network
+
+mkdir ~/cloud-keys
+
+ssh-keygen -q -N '' -f ~/cloud-keys/user1-key
+
+openstack keypair create --public-key ~/cloud-keys/user1-key.pub admin
+
+openstack security group create --description 'Allow SSH' Allow_SSH
+openstack security group rule create --proto tcp --dst-port 22 Allow_SSH
+
+openstack server create --image jammy-amd64 --flavor m1.small \
+   --key-name admin --network user1_net --security-group Allow_SSH \
+   jammy-2
+ 
+ openstack server create --image jammy-amd64 --flavor m1.small \
+ jammy-2
+
+FLOATING_IP=$(openstack floating ip create -f value -c floating_ip_address ext_net)
+openstack server add floating ip jammy-2 $FLOATING_IP
+
+openstack server list
+openstack console log show jammy-1
+ssh -i ~/cloud-keys/user1-key ubuntu@$FLOATING_IP
 
 
  
+
+
+
+
+
+juju run-action --wait neutron-hacluster/2 pause

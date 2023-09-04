@@ -1,0 +1,23 @@
+enforce ssl in openstack-dashboard, or a lot of ssl error occurs
+
+ juju add-relation keystone ceilometer:identity-service
+this relation is missing in the zed bundle 
+
+ceilometer upgrade action needs -> touch openrc
+
+
+unseal all vaults in hacluster , otherwise many errors 
+
+
+wait for keystone to update all endpoints before unsealing vault. or errors occur
+
+
+install ceph dashboard , monitoring and ganesha 
+
+cinder backup incremental 
+
+openstack dashboard change to version 23.1.0
+
+LUKS install 
+
+space -> change to storage/internal
