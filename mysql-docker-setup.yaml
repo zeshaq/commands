@@ -1,0 +1,20 @@
+https://www.datacamp.com/tutorial/set-up-and-configure-mysql-in-docker
+
+
+docker pull mysql:latest
+
+
+sudo mkdir -p /etc/docker/test-mysql
+
+sudo touch /etc/docker/test-mysql/my.cnf
+
+docker volume create test-mysql-data
+
+
+docker run \
+   --name final-mysql \
+   -e MYSQL_ROOT_PASSWORD=strong_password \
+   -p 3307:3306 \
+   -v /etc/docker/test-mysql:/etc/mysql/conf.d \
+   -v final-mysql-data:/var/lib/mysql \
+   -d mysql
